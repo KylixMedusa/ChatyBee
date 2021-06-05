@@ -1,6 +1,6 @@
-# chatybee
+# ChatyBee
 
-A new Flutter project.
+A Flutter-Firebase Chat Application.
 
 ## Getting Started
 
