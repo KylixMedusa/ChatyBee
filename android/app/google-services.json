@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "772284436803",
+    "project_id": "chatybee-a90a4",
+    "storage_bucket": "chatybee-a90a4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:772284436803:android:c4b30a1566148780319ff6",
+        "android_client_info": {
+          "package_name": "com.kylixmedusa.chatybee"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "772284436803-rnp8k4ip4ou6v15mb5jhbooqcae8p8p9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kylixmedusa.chatybee",
+            "certificate_hash": "4a1bddb9f8fa453163e0c54951c8ba67bf6e07a6"
+          }
+        },
+        {
+          "client_id": "772284436803-4hqshlu2f96su1bk2anglpe36iul1j5v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAW560J2hGRCksJKk7Tj2oGu20tQwq4aqM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "772284436803-4hqshlu2f96su1bk2anglpe36iul1j5v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
