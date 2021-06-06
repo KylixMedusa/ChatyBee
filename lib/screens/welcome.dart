@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:provider/provider.dart';
 import '../widgets/rounded_button.dart';
 import '../widgets/Snackbar.dart';
 
@@ -11,15 +12,15 @@ class Welcome extends StatefulWidget {
 }
 
 class _WelcomeState extends State<Welcome> {
-  @override
-  void initState() {
-    super.initState();
-    Firebase.initializeApp();
+  void _init() async {
+    final storage = Provider.of<FlutterSecureStorage>(context, listen: false);
+    await storage.write(key: "isNew", value: 'true');
   }
 
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
+    _init();
     return Scaffold(
       backgroundColor: Theme.of(context).hintColor,
       body: Snackbar(
@@ -47,6 +48,7 @@ class _WelcomeState extends State<Welcome> {
               ),
               SafeArea(
                 child: SingleChildScrollView(
+                  physics: ClampingScrollPhysics(),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
