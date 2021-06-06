@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -67,16 +68,18 @@ class _ProfileAddState extends State<ProfileAdd> {
       try {
         await firebaseStorageRef.putFile(pickedFile);
 
+        final url = await firebaseStorageRef.getDownloadURL();
         await firestore.collection('users').doc(user.uid).set({
-          'avatar': firebaseStorageRef.getDownloadURL(),
+          'avatar': url,
           'name': _values["name"],
-          'status': _values["status"],
-          'online': true
+          'status': _values["status"]
         }, SetOptions(merge: true));
         snackbarStore.remove();
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/phone-verify', (_) => false);
       } on FirebaseException catch (_) {
         snackbarStore.add(SnackbarType(
-          message: "Picture couldn't be uploaded..Retry!!!",
+          message: "Failed..Retry!!!",
           margin: EdgeInsets.all(10),
           borderRadius: 4,
           duration: Duration(seconds: 2),
@@ -88,22 +91,22 @@ class _ProfileAddState extends State<ProfileAdd> {
 
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final User user = FirebaseAuth.instance.currentUser;
-
   File pickedFile;
-
   Map<String, String> _values = {"name": "", "status": ""};
-
   GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     SnackbarStore snackbarStore = Provider.of<SnackbarStore>(context);
+    final storage = Provider.of<FlutterSecureStorage>(context);
     return Scaffold(
       backgroundColor: Theme.of(context).hintColor,
       appBar: CustomAppBar(
-          title: "Profile",
+          title: "Add Profile",
           onBackPressed: () async {
             await FirebaseAuth.instance.signOut();
+            await storage.delete(key: 'email');
+            await storage.delete(key: 'password');
             Navigator.popAndPushNamed(context, '/register');
           }),
       body: Snackbar(
