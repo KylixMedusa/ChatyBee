@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 
 import '../widgets/rounded_button.dart';
@@ -15,7 +17,10 @@ class Register extends StatefulWidget {
 }
 
 class _RegisterState extends State<Register> {
-  void register(SnackbarStore snackbarStore) async {
+  void register() async {
+    final SnackbarStore snackbarStore =
+        Provider.of<SnackbarStore>(context, listen: false);
+    final storage = Provider.of<FlutterSecureStorage>(context, listen: false);
     if (_formKey.currentState.validate()) {
       snackbarStore.add(SnackbarType(
         message: "Signing you up!!!",
@@ -26,8 +31,20 @@ class _RegisterState extends State<Register> {
         isDismissible: false,
       ));
       try {
-        await FirebaseAuth.instance
+        final UserCredential credential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(email: email, password: password);
+        await storage.write(key: 'email', value: email);
+        await storage.write(key: 'password', value: password);
+        DocumentReference doc = FirebaseFirestore.instance
+            .collection('users')
+            .doc(credential.user.uid);
+        await doc.set(<String, dynamic>{
+          'name': email.split('@').first,
+          'status': 'Can\'t talk, Chats only!!!',
+          'avatar': null,
+          'phone': null,
+          'online': true
+        }, SetOptions(merge: true));
         snackbarStore.remove();
         Navigator.pushNamedAndRemoveUntil(
             context, '/profile-add', (route) => false);
@@ -67,7 +84,6 @@ class _RegisterState extends State<Register> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
-    SnackbarStore snackbarStore = Provider.of<SnackbarStore>(context);
     return Scaffold(
       backgroundColor: Theme.of(context).hintColor,
       body: Snackbar(
@@ -95,6 +111,7 @@ class _RegisterState extends State<Register> {
               ),
               SafeArea(
                 child: SingleChildScrollView(
+                  physics: ClampingScrollPhysics(),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -135,7 +152,7 @@ class _RegisterState extends State<Register> {
                       RoundedButton(
                         text: "Register",
                         press: () {
-                          this.register(snackbarStore);
+                          this.register();
                         },
                       ),
                       SizedBox(height: size.height * 0.03),
