@@ -62,29 +62,50 @@ class _ProfileAddState extends State<ProfileAdd> {
         duration: null,
         isDismissible: false,
       ));
-      String fileName = pickedFile.path.split('/').last;
-      Reference firebaseStorageRef =
-          FirebaseStorage.instance.ref().child('uploads/$fileName');
-      try {
-        await firebaseStorageRef.putFile(pickedFile);
+      if (pickedFile != null) {
+        String fileName = pickedFile.path.split('/').last;
+        Reference firebaseStorageRef =
+            FirebaseStorage.instance.ref().child('uploads/$fileName');
+        try {
+          await firebaseStorageRef.putFile(pickedFile);
 
-        final url = await firebaseStorageRef.getDownloadURL();
-        await firestore.collection('users').doc(user.uid).set({
-          'avatar': url,
-          'name': _values["name"],
-          'status': _values["status"]
-        }, SetOptions(merge: true));
-        snackbarStore.remove();
-        Navigator.pushNamedAndRemoveUntil(
-            context, '/phone-verify', (_) => false);
-      } on FirebaseException catch (_) {
-        snackbarStore.add(SnackbarType(
-          message: "Failed..Retry!!!",
-          margin: EdgeInsets.all(10),
-          borderRadius: 4,
-          duration: Duration(seconds: 2),
-          isDismissible: true,
-        ));
+          final url = await firebaseStorageRef.getDownloadURL();
+          await firestore.collection('users').doc(user.uid).set({
+            'avatar': url,
+            'name': _values["name"],
+            'status': _values["status"]
+          }, SetOptions(merge: true));
+          snackbarStore.remove();
+          Navigator.pushNamedAndRemoveUntil(
+              context, '/phone-verify', (_) => false);
+        } on FirebaseException catch (_) {
+          snackbarStore.add(SnackbarType(
+            message: "Failed..Retry!!!",
+            margin: EdgeInsets.all(10),
+            borderRadius: 4,
+            duration: Duration(seconds: 2),
+            isDismissible: true,
+          ));
+        }
+      } else {
+        try {
+          await firestore.collection('users').doc(user.uid).set({
+            'avatar': null,
+            'name': _values["name"],
+            'status': _values["status"]
+          }, SetOptions(merge: true));
+          snackbarStore.remove();
+          Navigator.pushNamedAndRemoveUntil(
+              context, '/phone-verify', (_) => false);
+        } catch (_) {
+          snackbarStore.add(SnackbarType(
+            message: "Failed..Retry!!!",
+            margin: EdgeInsets.all(10),
+            borderRadius: 4,
+            duration: Duration(seconds: 2),
+            isDismissible: true,
+          ));
+        }
       }
     }
   }
