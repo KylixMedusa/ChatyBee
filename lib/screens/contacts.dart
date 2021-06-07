@@ -1,8 +1,8 @@
 import 'package:chatybee/widgets/contacts_search.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:contacts_service/contacts_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../widgets/Snackbar.dart';
@@ -71,7 +71,8 @@ class _ContactsListState extends State<ContactsList> {
                 List<Contact> contacts = snapshot.data.toList() ?? [];
                 List<String> phones = [];
                 for (Contact contact in contacts) {
-                  phones.addAll(contact.phones.map((phone) => phone.value));
+                  phones.addAll(contact.phones
+                      .map((phone) => normalizePhone(phone.value)));
                 }
                 return StreamBuilder(
                     stream: firestore.collection('users').snapshots(),
@@ -85,6 +86,7 @@ class _ContactsListState extends State<ContactsList> {
                       }
                       List<QueryDocumentSnapshot<Map<String, dynamic>>> users =
                           snap.data.docs ?? [];
+                      users.removeWhere((element) => element.id == user.uid);
                       return buildList(phones, users);
                     });
               }),
@@ -93,80 +95,104 @@ class _ContactsListState extends State<ContactsList> {
     );
   }
 
+  final User user = FirebaseAuth.instance.currentUser;
+
   Widget buildList(List<String> phones,
       List<QueryDocumentSnapshot<Map<String, dynamic>>> users) {
-    List<QueryDocumentSnapshot<Map<String, dynamic>>> result =
-        shuffleBothLists(phones, users);
-    return ListView.builder(
-      physics: ClampingScrollPhysics(),
-      itemCount: result.length,
-      itemBuilder: (ctx, index) {
-        var contact = result[index];
-        final Widget avatar = contact["avatar"] != null
-            ? Image.network(contact["avatar"])
-            : Image.asset('assets/images/user.png');
-        return Material(
-          type: MaterialType.card,
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              Navigator.of(context).pushNamed('/chat', arguments: contact.id);
-            },
-            child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                child: ListTile(
-                  dense: true,
-                  horizontalTitleGap: 10,
-                  minVerticalPadding: 8,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 0),
-                  isThreeLine: true,
-                  leading: CircleAvatar(
-                      radius: 26,
-                      child: Stack(children: [
-                        Container(
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: Colors.grey)),
-                          child: ClipRRect(
-                              borderRadius: BorderRadius.circular(100),
-                              child: avatar),
-                        ),
-                        if (contact["online"])
-                          Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                width: 15,
-                                height: 15,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(100),
-                                    color: Colors.green,
-                                    border: Border.all(
-                                        color: Theme.of(context).hintColor)),
-                              ))
-                      ])),
-                  title: Text(contact["name"] ?? "",
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      style: Theme.of(context).textTheme.headline5.copyWith(
-                          fontSize: 18.0, fontWeight: FontWeight.w600)),
-                  subtitle: Text(contact["status"] ?? "",
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyText2
-                          .copyWith(fontWeight: FontWeight.w200)),
-                )),
-          ),
-        );
-      },
-    );
+    return FutureBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
+        future: shuffleBothLists(phones, users),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Scrollbar(
+              isAlwaysShown: false,
+              radius: Radius.circular(25),
+              hoverThickness: 14,
+              child: ListView.builder(
+                physics: ClampingScrollPhysics(),
+                itemCount: result.length,
+                itemBuilder: (ctx, index) {
+                  var contact = result[index];
+                  final Widget avatar = contact["avatar"] != null
+                      ? Image.network(contact["avatar"])
+                      : Image.asset('assets/images/user.png');
+                  return Material(
+                    type: MaterialType.card,
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context)
+                            .pushNamed('/chat', arguments: contact.id);
+                      },
+                      child: Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          child: ListTile(
+                            dense: true,
+                            horizontalTitleGap: 10,
+                            minVerticalPadding: 8,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 0),
+                            isThreeLine: true,
+                            leading: CircleAvatar(
+                                radius: 26,
+                                child: Stack(children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                        borderRadius:
+                                            BorderRadius.circular(100),
+                                        border: Border.all(color: Colors.grey)),
+                                    child: ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(100),
+                                        child: avatar),
+                                  ),
+                                  if (contact["online"])
+                                    Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: Container(
+                                          width: 15,
+                                          height: 15,
+                                          decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(100),
+                                              color: Colors.green,
+                                              border: Border.all(
+                                                  color: Theme.of(context)
+                                                      .hintColor)),
+                                        ))
+                                ])),
+                            title: Text(contact["name"] ?? "",
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline5
+                                    .copyWith(
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.w600)),
+                            subtitle: Text(contact["status"] ?? "",
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyText2
+                                    .copyWith(fontWeight: FontWeight.w200)),
+                          )),
+                    ),
+                  );
+                },
+              ),
+            );
+          }
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        });
   }
 
-  List<QueryDocumentSnapshot<Map<String, dynamic>>> shuffleBothLists(
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> shuffleBothLists(
       List<String> phones,
-      List<QueryDocumentSnapshot<Map<String, dynamic>>> users) {
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> users) async {
     List<QueryDocumentSnapshot<Map<String, dynamic>>> result = [];
 
     for (QueryDocumentSnapshot<Map<String, dynamic>> s in users) {
@@ -177,7 +203,7 @@ class _ContactsListState extends State<ContactsList> {
 
     result.sort((a, b) => a["name"].compareTo(b["name"]));
 
-    this.result = result;
+    this.result = [...result];
 
     return result;
   }
@@ -191,5 +217,11 @@ class _ContactsListState extends State<ContactsList> {
       return ContactsService.getContacts(withThumbnails: false);
     }
     return null;
+  }
+
+  String normalizePhone(String phone) {
+    String newPhone =
+        '+91${(phone.replaceAll('+91', '')).replaceAll(new RegExp(r"\D"), "")}';
+    return newPhone;
   }
 }
