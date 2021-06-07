@@ -13,22 +13,39 @@ class Home extends StatefulWidget {
   _HomeState createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends State<Home> with WidgetsBindingObserver {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final User user = FirebaseAuth.instance.currentUser;
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        setOnlineStatus(true);
+        break;
+      case AppLifecycleState.inactive:
+        setOnlineStatus(true);
+        break;
+      case AppLifecycleState.paused:
+        setOnlineStatus(false);
+        break;
+      case AppLifecycleState.detached:
+        setOnlineStatus(false);
+        break;
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setOnlineStatus(true);
-    });
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
-    super.dispose();
     setOnlineStatus(false);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   setOnlineStatus(bool val) {
