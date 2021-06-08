@@ -23,10 +23,10 @@ class CustomAppBar extends StatelessWidget with PreferredSizeWidget {
           splashRadius: 24,
           icon: Icon(Icons.arrow_back),
           onPressed: () => onBackPressed ?? Navigator.pop(context)),
+      titleSpacing: 5,
       title: FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text(title.toUpperCase(),
-              style: Theme.of(context).textTheme.headline3)),
+          child: Text(title, style: Theme.of(context).textTheme.headline3)),
     );
   }
 }
