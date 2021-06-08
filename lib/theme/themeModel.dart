@@ -1,34 +1,22 @@
 import 'package:flutter/material.dart';
-import './theme.dart';
-// import 'package:elearning/main.dart' as main;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-enum ThemeType { Light, Dark }
+class ThemeModel with ChangeNotifier {
+  ThemeMode _mode = ThemeMode.light;
+  ThemeMode get mode => _mode;
+  ThemeModel(FlutterSecureStorage storage) {
+    setInit(storage);
+  }
 
-class ThemeModel extends ChangeNotifier {
-  ThemeData currentTheme = kLightTheme;
-  ThemeType themeType = ThemeType.Dark;
+  setInit(storage) async {
+    var dark = await storage.read(key: "dark");
+    if (dark != null) {
+      toggleMode(ThemeMode.dark);
+    }
+  }
 
-  ThemeModel(this.currentTheme, this.themeType);
-
-  // toggleTheme() {
-  //   if (this.themeType == ThemeType.Dark) {
-  //     main.prefs.setBool("darkMode", false);
-  //     this.currentTheme = kLightTheme;
-  //     this.themeType = ThemeType.Light;
-  //     print(main.prefs.getBool("darkMode"));
-  //     return notifyListeners();
-  //   }
-
-  //   if (this.themeType == ThemeType.Light) {
-  //     main.prefs.setBool("darkMode", true);
-  //     this.currentTheme = kDarkTheme;
-  //     this.themeType = ThemeType.Dark;
-  //     print(main.prefs.getBool("darkMode"));
-  //     return notifyListeners();
-  //   }
-  // }
-
-  returnTheme() {
-    return themeType;
+  void toggleMode(ThemeMode mode) {
+    _mode = mode;
+    notifyListeners();
   }
 }
