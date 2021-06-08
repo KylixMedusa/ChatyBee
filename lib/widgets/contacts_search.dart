@@ -7,6 +7,30 @@ class ContactsSearch extends SearchDelegate<dynamic> {
   final List<QueryDocumentSnapshot<Map<String, dynamic>>> contacts;
 
   @override
+  ThemeData appBarTheme(BuildContext context) {
+    assert(context != null);
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+    assert(theme != null);
+    return theme.copyWith(
+      appBarTheme: AppBarTheme(
+        elevation: 1,
+        brightness: colorScheme.brightness,
+        backgroundColor: colorScheme.brightness == Brightness.dark
+            ? Colors.grey[900]
+            : Colors.white,
+        iconTheme: theme.primaryIconTheme.copyWith(color: Colors.grey),
+        textTheme: theme.textTheme,
+      ),
+      inputDecorationTheme: searchFieldDecorationTheme ??
+          InputDecorationTheme(
+            hintStyle: searchFieldStyle ?? theme.inputDecorationTheme.hintStyle,
+            border: InputBorder.none,
+          ),
+    );
+  }
+
+  @override
   List<Widget> buildActions(BuildContext context) {
     return [
       IconButton(
