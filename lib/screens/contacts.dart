@@ -1,4 +1,3 @@
-import 'package:chatybee/widgets/contacts_search.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:contacts_service/contacts_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../widgets/Snackbar.dart';
+import '../widgets/contacts_search.dart';
 
 class ContactsList extends StatefulWidget {
   ContactsList({Key key}) : super(key: key);
@@ -17,6 +17,24 @@ class ContactsList extends StatefulWidget {
 class _ContactsListState extends State<ContactsList> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   // Iterable<Contact> contacts = await ContactsService.getContacts(withThumbnails: false);
+  ScrollController _scrollController;
+  double _elevation = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = new ScrollController();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  void _scrollListener() {
+    double newElevation = _scrollController.offset > 1 ? 1 : 0;
+    if (_elevation != newElevation) {
+      setState(() {
+        _elevation = newElevation;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +42,8 @@ class _ContactsListState extends State<ContactsList> {
     return Scaffold(
       backgroundColor: Theme.of(context).hintColor,
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
+        elevation: _elevation,
+        backgroundColor: Theme.of(context).hintColor,
         leading: IconButton(
             splashRadius: 24,
             icon: Icon(Icons.arrow_back),
@@ -108,6 +126,7 @@ class _ContactsListState extends State<ContactsList> {
               radius: Radius.circular(25),
               hoverThickness: 14,
               child: ListView.builder(
+                controller: _scrollController,
                 physics: ClampingScrollPhysics(),
                 itemCount: result.length,
                 itemBuilder: (ctx, index) {
