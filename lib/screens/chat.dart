@@ -46,10 +46,12 @@ class _ChatPageState extends State<ChatPage> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
+                  color: Theme.of(context).focusColor,
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.grey[300],
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[900]
+                            : Colors.grey[300],
                         offset: Offset(0, 2),
                         blurRadius: 5)
                   ],
@@ -63,10 +65,12 @@ class _ChatPageState extends State<ChatPage> {
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(18),
-                          color: Colors.grey[100].withAlpha(200),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[850].withAlpha(200)
+                              : Colors.grey[100].withAlpha(200),
                         ),
                         child: ListTile(
-                          minVerticalPadding: 0,
+                          minVerticalPadding: 8,
                           dense: true,
                           visualDensity:
                               VisualDensity(horizontal: 0, vertical: 0),
@@ -84,7 +88,10 @@ class _ChatPageState extends State<ChatPage> {
                                   .copyWith(
                                       color: Theme.of(context).accentColor,
                                       fontWeight: FontWeight.w600)),
-                          subtitle: Text(reply["text"],
+                          subtitle: Text(
+                              reply["type"] == "file"
+                                  ? 'File:${reply["file"]["name"]}'
+                                  : reply["text"],
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                               style: Theme.of(context)
@@ -94,7 +101,11 @@ class _ChatPageState extends State<ChatPage> {
                           trailing: GestureDetector(
                               child: CircleAvatar(
                                   radius: 14,
-                                  backgroundColor: Colors.grey[300],
+                                  backgroundColor:
+                                      Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.grey[800]
+                                          : Colors.grey[300],
                                   child: Icon(
                                     Icons.close,
                                     size: 20,
@@ -113,7 +124,7 @@ class _ChatPageState extends State<ChatPage> {
                     children: [
                       uploading
                           ? Padding(
-                              padding: const EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.all(12.0),
                               child: SizedBox(
                                 height: 24,
                                 width: 24,
@@ -206,7 +217,8 @@ class _ChatPageState extends State<ChatPage> {
 
     if (result != null) {
       PlatformFile file = result.files.first;
-      if (file.size < 10000) {
+      print(file.size);
+      if (file.size < 10000000) {
         var time = DateTime.now().toString();
         setState(() {
           uploading = true;
@@ -233,7 +245,10 @@ class _ChatPageState extends State<ChatPage> {
             "senderId": user.uid,
             "recieverId": widget.recieverId,
             "chatroomId": chatroomId,
-            "seen": false
+            "seen": false,
+            "reply": reply != null ? reply.id : null,
+            "deleted_everyone": false,
+            "deleted": []
           });
           DocumentReference doc = firestore
               .collection('users')
@@ -356,7 +371,7 @@ class _ChatPageState extends State<ChatPage> {
           return Scaffold(
             backgroundColor: Theme.of(context).hintColor,
             appBar: AppBar(
-              elevation: 0.5,
+              elevation: 1,
               backgroundColor: Theme.of(context).hintColor,
               leading: Padding(
                 padding:
@@ -436,10 +451,15 @@ class _ChatPageState extends State<ChatPage> {
                     image: DecorationImage(
                         fit: BoxFit.cover,
                         colorFilter: ColorFilter.mode(
-                            Theme.of(context).hintColor.withOpacity(0.05),
+                            Theme.of(context).brightness == Brightness.dark
+                                ? Theme.of(context).hintColor.withOpacity(0.15)
+                                : Theme.of(context).hintColor.withOpacity(0.05),
                             BlendMode.dstATop),
                         repeat: ImageRepeat.noRepeat,
-                        image: AssetImage('assets/images/patternLight.png'))),
+                        image: AssetImage(
+                            Theme.of(context).brightness == Brightness.dark
+                                ? 'assets/images/patternDark.png'
+                                : 'assets/images/patternLight.png'))),
                 child: Column(
                   children: [
                     Expanded(
@@ -535,7 +555,11 @@ class _ChatState extends State<Chat> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 !message['seen']
-                    ? Icon(Icons.done, size: 16, color: Colors.grey[850])
+                    ? Icon(Icons.done,
+                        size: 16,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[500]
+                            : Colors.grey[850])
                     : Icon(Icons.done_all,
                         size: 16, color: Theme.of(context).accentColor),
                 SizedBox(width: 5),
@@ -583,8 +607,10 @@ class _ChatState extends State<Chat> {
                                             : widget.recieverProfile.name
                                         : '';
                                     final text = snap.data != null &&
-                                            snap.data["text"] != null
-                                        ? snap.data["text"]
+                                            snap.data["type"] != null
+                                        ? snap.data["type"] == 'file'
+                                            ? 'File:${snap.data["file"]["name"]}'
+                                            : snap.data["text"]
                                         : '';
                                     return Container(
                                       decoration: BoxDecoration(
@@ -592,7 +618,7 @@ class _ChatState extends State<Chat> {
                                         color: Colors.black.withAlpha(30),
                                       ),
                                       child: ListTile(
-                                        minVerticalPadding: 0,
+                                        minVerticalPadding: 8,
                                         dense: true,
                                         visualDensity: VisualDensity(
                                             horizontal: 0, vertical: 0),
@@ -705,7 +731,10 @@ class _ChatState extends State<Chat> {
                             constraints: BoxConstraints(
                                 maxWidth:
                                     MediaQuery.of(context).size.width * .6),
-                            padding: const EdgeInsets.all(15.0),
+                            padding: message["reply"] != null &&
+                                    message["reply"] != ""
+                                ? const EdgeInsets.fromLTRB(8, 8, 8, 15)
+                                : const EdgeInsets.all(15.0),
                             decoration: BoxDecoration(
                               color: Theme.of(context).focusColor,
                               borderRadius: BorderRadius.only(
@@ -734,8 +763,10 @@ class _ChatState extends State<Chat> {
                                                 : widget.recieverProfile.name
                                             : '';
                                         final text = snap.data != null &&
-                                                snap.data["text"] != null
-                                            ? snap.data["text"]
+                                                snap.data["type"] != null
+                                            ? snap.data["type"] == 'file'
+                                                ? 'File:${snap.data["file"]["name"]}'
+                                                : snap.data["text"]
                                             : '';
                                         return Container(
                                           decoration: BoxDecoration(
@@ -744,7 +775,7 @@ class _ChatState extends State<Chat> {
                                             color: Colors.black.withAlpha(30),
                                           ),
                                           child: ListTile(
-                                            minVerticalPadding: 0,
+                                            minVerticalPadding: 8,
                                             dense: true,
                                             visualDensity: VisualDensity(
                                                 horizontal: 0, vertical: 0),
@@ -804,207 +835,378 @@ class _ChatState extends State<Chat> {
 
   Widget _buildFile(message, bool isMe, BuildContext context) {
     if (isMe) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            !message['seen']
-                ? Icon(Icons.done, size: 16, color: Colors.grey[850])
-                : Icon(Icons.done_all,
-                    size: 16, color: Theme.of(context).accentColor),
-            SizedBox(width: 5),
-            Text(
-              "${format(message['time'])}",
-              style: Theme.of(context).textTheme.bodyText2,
-            ),
-            SizedBox(width: 15),
-            Flexible(
-              child: Container(
-                alignment: Alignment.centerRight,
-                constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * .6),
-                padding: const EdgeInsets.all(15.0),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).accentColor,
-                  borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(25),
-                    topLeft: Radius.circular(25),
-                    bottomLeft: Radius.circular(25),
+      return Swipeable(
+        onSwipeRight: () {
+          widget.setReply(message);
+        },
+        background: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          color: Colors.transparent,
+          child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(100),
+                  color: Colors.grey[400].withAlpha(100)),
+              child: Icon(Icons.reply)),
+          alignment: Alignment.centerLeft,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              !message['seen']
+                  ? Icon(Icons.done,
+                      size: 16,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[500]
+                          : Colors.grey[850])
+                  : Icon(Icons.done_all,
+                      size: 16, color: Theme.of(context).accentColor),
+              SizedBox(width: 5),
+              Text(
+                "${format(message['time'])}",
+                style: Theme.of(context).textTheme.bodyText2,
+              ),
+              SizedBox(width: 15),
+              Flexible(
+                child: Container(
+                  alignment: Alignment.centerRight,
+                  constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * .6),
+                  padding: message["reply"] != null && message["reply"] != ""
+                      ? const EdgeInsets.fromLTRB(8, 8, 8, 15)
+                      : const EdgeInsets.all(15.0),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).accentColor,
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(25),
+                      topLeft: Radius.circular(25),
+                      bottomLeft: Radius.circular(25),
+                    ),
                   ),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(25),
-                    topLeft: Radius.circular(25),
-                    bottomLeft: Radius.circular(25),
-                  ),
-                  onTap: () {},
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      if (message["reply"] != null &&
+                          message["reply"] != "") ...[
+                        FutureBuilder(
+                            future: widget.firestore
+                                .collection('message')
+                                .doc(widget.chatroomId)
+                                .collection('messages')
+                                .doc(message["reply"])
+                                .get(),
+                            builder: (ctx, snap) {
+                              final sender = snap.data != null &&
+                                      snap.data["senderId"] != null
+                                  ? snap.data["senderId"] == user.uid
+                                      ? 'You'
+                                      : widget.recieverProfile.name
+                                  : '';
+                              final text =
+                                  snap.data != null && snap.data["type"] != null
+                                      ? snap.data["type"] == 'file'
+                                          ? 'File:${snap.data["file"]["name"]}'
+                                          : snap.data["text"]
+                                      : '';
+                              return Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(18),
+                                  color: Colors.black.withAlpha(30),
+                                ),
+                                child: ListTile(
+                                  minVerticalPadding: 8,
+                                  dense: true,
+                                  visualDensity:
+                                      VisualDensity(horizontal: 0, vertical: 0),
+                                  contentPadding:
+                                      EdgeInsets.symmetric(horizontal: 8.0),
+                                  horizontalTitleGap: 8,
+                                  title: Text(sender,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText2
+                                          .copyWith(
+                                              color:
+                                                  Theme.of(context).accentColor,
+                                              fontWeight: FontWeight.w600)),
+                                  subtitle: Text(text,
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText2
+                                          .copyWith(
+                                              fontWeight: FontWeight.w300)),
+                                ),
+                              );
+                            }),
+                        Padding(padding: EdgeInsets.only(top: 8))
+                      ],
+                      InkWell(
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(25),
+                          topLeft: Radius.circular(25),
+                          bottomLeft: Radius.circular(25),
+                        ),
+                        onTap: () {},
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            Text("${message['file']['name']}",
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyText2
-                                    .copyWith(color: Colors.white)),
-                            Text(
-                                "${(message['file']['extension']).toUpperCase()} - ${(message['file']['size'] / 1000).toStringAsFixed(2)}KB",
-                                softWrap: true,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyText2
-                                    .copyWith(color: Colors.white)),
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("${message['file']['name']}",
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText2
+                                          .copyWith(color: Colors.white)),
+                                  Text(
+                                      "${(message['file']['extension']).toUpperCase()} - ${(message['file']['size'] / 1000).toStringAsFixed(2)}KB",
+                                      softWrap: true,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText2
+                                          .copyWith(color: Colors.white)),
+                                ],
+                              ),
+                            ),
+                            InkWell(
+                                borderRadius: BorderRadius.circular(100),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.white),
+                                      borderRadius: BorderRadius.circular(100)),
+                                  padding: EdgeInsets.all(4),
+                                  child: Icon(Icons.file_download,
+                                      color: Colors.white),
+                                ),
+                                onTap: () async {
+                                  String dir = await _prepareSaveDir();
+                                  if (dir != null) {
+                                    FlutterDownloader.enqueue(
+                                        url: message['file']['url'],
+                                        savedDir: dir,
+                                        fileName: message['file']['name'],
+                                        showNotification: true,
+                                        openFileFromNotification: true);
+                                  }
+                                })
                           ],
                         ),
                       ),
-                      InkWell(
-                          borderRadius: BorderRadius.circular(100),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                border: Border.all(
-                                    color: Theme.of(context).primaryColor),
-                                borderRadius: BorderRadius.circular(100)),
-                            padding: EdgeInsets.all(4),
-                            child: Icon(Icons.file_download,
-                                color: Theme.of(context).primaryColor),
-                          ),
-                          onTap: () async {
-                            String dir = await _prepareSaveDir();
-                            if (dir != null) {
-                              FlutterDownloader.enqueue(
-                                  url: message['file']['url'],
-                                  savedDir: dir,
-                                  fileName: message['file']['name'],
-                                  showNotification: true,
-                                  openFileFromNotification: true);
-                            }
-                          })
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     } else {
-      return Padding(
-        padding: const EdgeInsets.only(top: 8.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.grey.withOpacity(.3),
-                          offset: Offset(0, 2),
-                          blurRadius: 5)
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    backgroundImage: widget.recieverProfile.avatar != null &&
-                            widget.recieverProfile.avatar != ""
-                        ? NetworkImage(widget.recieverProfile.avatar)
-                        : AssetImage('assets/images/user.png'),
-                  ),
-                ),
-                SizedBox(width: 5),
-                Flexible(
-                  child: Container(
-                    constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width * .6),
-                    padding: const EdgeInsets.all(15.0),
+      return Swipeable(
+        onSwipeRight: () {
+          widget.setReply(message);
+        },
+        background: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          color: Colors.transparent,
+          child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(100),
+                  color: Colors.grey[400].withAlpha(100)),
+              child: Icon(Icons.reply)),
+          alignment: Alignment.centerLeft,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 30,
+                    height: 30,
                     decoration: BoxDecoration(
-                      color: Color(0xfff9f9f9),
-                      borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(25),
-                        bottomLeft: Radius.circular(25),
-                        bottomRight: Radius.circular(25),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 1,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.grey.withOpacity(.3),
+                            offset: Offset(0, 2),
+                            blurRadius: 5)
+                      ],
                     ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(25),
-                        topLeft: Radius.circular(25),
-                        bottomLeft: Radius.circular(25),
+                    child: CircleAvatar(
+                      backgroundImage: widget.recieverProfile.avatar != null &&
+                              widget.recieverProfile.avatar != ""
+                          ? NetworkImage(widget.recieverProfile.avatar)
+                          : AssetImage('assets/images/user.png'),
+                    ),
+                  ),
+                  SizedBox(width: 5),
+                  Flexible(
+                    child: Container(
+                      constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * .6),
+                      padding:
+                          message["reply"] != null && message["reply"] != ""
+                              ? const EdgeInsets.fromLTRB(8, 8, 8, 15)
+                              : const EdgeInsets.all(15.0),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).focusColor,
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(25),
+                          bottomLeft: Radius.circular(25),
+                          bottomRight: Radius.circular(25),
+                        ),
                       ),
-                      onTap: () {},
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          if (message["reply"] != null &&
+                              message["reply"] != "") ...[
+                            FutureBuilder(
+                                future: widget.firestore
+                                    .collection('message')
+                                    .doc(widget.chatroomId)
+                                    .collection('messages')
+                                    .doc(message["reply"])
+                                    .get(),
+                                builder: (ctx, snap) {
+                                  final sender = snap.data != null &&
+                                          snap.data["senderId"] != null
+                                      ? snap.data["senderId"] == user.uid
+                                          ? 'You'
+                                          : widget.recieverProfile.name
+                                      : '';
+                                  final text = snap.data != null &&
+                                          snap.data["type"] != null
+                                      ? snap.data["type"] == 'file'
+                                          ? 'File:${snap.data["file"]["name"]}'
+                                          : snap.data["text"]
+                                      : '';
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(18),
+                                      color: Colors.black.withAlpha(30),
+                                    ),
+                                    child: ListTile(
+                                      minVerticalPadding: 8,
+                                      dense: true,
+                                      visualDensity: VisualDensity(
+                                          horizontal: 0, vertical: 0),
+                                      contentPadding:
+                                          EdgeInsets.symmetric(horizontal: 8.0),
+                                      horizontalTitleGap: 8,
+                                      title: Text(sender,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText2
+                                              .copyWith(
+                                                  color: Theme.of(context)
+                                                      .accentColor,
+                                                  fontWeight: FontWeight.w600)),
+                                      subtitle: Text(text,
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText2
+                                              .copyWith(
+                                                  fontWeight: FontWeight.w300)),
+                                    ),
+                                  );
+                                }),
+                            Padding(padding: EdgeInsets.only(top: 8))
+                          ],
+                          InkWell(
+                            borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(25),
+                              topLeft: Radius.circular(25),
+                              bottomLeft: Radius.circular(25),
+                            ),
+                            onTap: () {},
+                            child: Row(
                               children: [
-                                Text("${message['file']['name']}",
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2),
-                                Text(
-                                    "${(message['file']['extension']).toUpperCase()} - ${(message['file']['size'] / 1000).toStringAsFixed(2)}KB",
-                                    softWrap: true,
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text("${message['file']['name']}",
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText2),
+                                      Text(
+                                          "${(message['file']['extension']).toUpperCase()} - ${(message['file']['size'] / 1000).toStringAsFixed(2)}KB",
+                                          softWrap: true,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText2),
+                                    ],
+                                  ),
+                                ),
+                                InkWell(
+                                    borderRadius: BorderRadius.circular(100),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                          border: Border.all(
+                                              color: Theme.of(context)
+                                                  .accentColor),
+                                          borderRadius:
+                                              BorderRadius.circular(100)),
+                                      padding: EdgeInsets.all(4),
+                                      child: Icon(Icons.file_download,
+                                          color: Theme.of(context).accentColor),
+                                    ),
+                                    onTap: () async {
+                                      String dir = await _prepareSaveDir();
+                                      if (dir != null) {
+                                        FlutterDownloader.enqueue(
+                                            url: message['file']['url'],
+                                            savedDir: dir,
+                                            fileName: message['file']['name'],
+                                            showNotification: true,
+                                            openFileFromNotification: true);
+                                      }
+                                    })
                               ],
                             ),
                           ),
-                          InkWell(
-                              borderRadius: BorderRadius.circular(100),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    border: Border.all(
-                                        color: Theme.of(context).accentColor),
-                                    borderRadius: BorderRadius.circular(100)),
-                                padding: EdgeInsets.all(4),
-                                child: Icon(Icons.file_download,
-                                    color: Theme.of(context).accentColor),
-                              ),
-                              onTap: () async {
-                                String dir = await _prepareSaveDir();
-                                if (dir != null) {
-                                  FlutterDownloader.enqueue(
-                                      url: message['file']['url'],
-                                      savedDir: dir,
-                                      fileName: message['file']['name'],
-                                      showNotification: true,
-                                      openFileFromNotification: true);
-                                }
-                              })
                         ],
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(width: 15),
-            Text(
-              "${format(message['time'])}",
-              style: Theme.of(context).textTheme.bodyText2,
-            ),
-          ],
+                ],
+              ),
+              SizedBox(width: 15),
+              Text(
+                "${format(message['time'])}",
+                style: Theme.of(context).textTheme.bodyText2,
+              ),
+            ],
+          ),
         ),
       );
     }
