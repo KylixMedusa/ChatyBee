@@ -76,7 +76,10 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> {
                                 .headline2
                                 .copyWith(color: Colors.white)),
                         Text("Bee",
-                            style: Theme.of(context).textTheme.headline2),
+                            style: Theme.of(context)
+                                .textTheme
+                                .headline2
+                                .copyWith(color: Colors.black)),
                       ],
                     )
                   ],
