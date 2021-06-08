@@ -35,13 +35,12 @@ class App {
   }
 }
 
-class Colors {
+class CustomColors {
   Color _mainColor = Color(0xFFFFFFFF);
   Color _secondColor = Color.fromRGBO(247, 247, 255, 1);
   Color _accentColor = Color.fromRGBO(160, 113, 222, 1);
-  // Color _mainDarkColor = Color(0xFF181818);
-  // Color _secondDarkColor = Color(0xFF2F2F2F);
-  // Color _accentDarkColor = Color(0xFFF0F0F0);
+  Color _mainDarkColor = Color(0xFF181818);
+  Color _secondDarkColor = Colors.black;
 
   LinearGradient waves = LinearGradient(
     colors: [Color.fromRGBO(0, 107, 213, 1), Color.fromRGBO(69, 152, 233, 1)],
@@ -61,15 +60,15 @@ class Colors {
     return this._accentColor.withOpacity(opacity);
   }
 
-  // Color mainDarkColor(double opacity) {
-  //   return this._mainDarkColor.withOpacity(opacity);
-  // }
+  Color mainDarkColor(double opacity) {
+    return this._mainDarkColor.withOpacity(opacity);
+  }
 
-  // Color secondDarkColor(double opacity) {
-  //   return this._secondDarkColor.withOpacity(opacity);
-  // }
+  Color secondDarkColor(double opacity) {
+    return this._secondDarkColor.withOpacity(opacity);
+  }
 
-  // Color accentDarkColor(double opacity) {
-  //   return this._accentDarkColor.withOpacity(opacity);
-  // }
+  Color accentDarkColor(double opacity) {
+    return this._accentColor.withOpacity(opacity);
+  }
 }
