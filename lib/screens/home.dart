@@ -1,8 +1,10 @@
+import 'package:chatybee/provider/snackbarStore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../widgets/Snackbar.dart';
 import '../widgets/chatrooms_search.dart';
@@ -534,6 +536,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
           icon: Icon(Icons.delete_outline_rounded),
           tooltip: 'Delete',
           onPressed: () {
+            handleDelete(_selected.map((e) => e.id).toList());
             setState(() {
               _selected = [];
             });
@@ -552,6 +555,77 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
           .collection('connections')
           .doc(id);
       doc.set({'pinned': val ? time : null}, SetOptions(merge: true));
+    }
+  }
+
+  void handleDelete(List<String> ids) async {
+    SnackbarStore snackbarStore =
+        Provider.of<SnackbarStore>(context, listen: false);
+    bool result = await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Confirmation',
+              style: Theme.of(context).textTheme.headline4),
+          content: Text('Are you sure you want to close the job?',
+              style: Theme.of(context).textTheme.headline5),
+          actions: <Widget>[
+            new TextButton(
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true)
+                    .pop(false); // dismisses only the dialog and returns false
+              },
+              child: Text(
+                'No',
+                style: TextStyle(color: Colors.grey[400]),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true)
+                    .pop(true); // dismisses only the dialog and returns true
+              },
+              child: Text('Yes',
+                  style: TextStyle(color: Theme.of(context).accentColor)),
+            ),
+          ],
+        );
+      },
+    );
+    if (result) {
+      snackbarStore.add(SnackbarType(
+        message: "Deleted!!!",
+        showProgressIndicator: true,
+        margin: EdgeInsets.all(10),
+        borderRadius: 4,
+        duration: null,
+        isDismissible: false,
+      ));
+      try {
+        for (var id in ids) {
+          var doc = firestore
+              .collection('users')
+              .doc(user.uid)
+              .collection('connections')
+              .doc(id);
+          doc.delete();
+          snackbarStore.add(SnackbarType(
+            message: "Deleted successfully!!!",
+            margin: EdgeInsets.all(10),
+            borderRadius: 4,
+            duration: Duration(seconds: 1),
+            isDismissible: true,
+          ));
+        }
+      } catch (e) {
+        snackbarStore.add(SnackbarType(
+          message: "Internal error..Retry!!!",
+          margin: EdgeInsets.all(10),
+          borderRadius: 4,
+          duration: Duration(seconds: 1),
+          isDismissible: true,
+        ));
+      }
     }
   }
 }
